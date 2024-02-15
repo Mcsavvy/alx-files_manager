@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getStatus, getStats } from '../controllers/AppController';
+import { postNew } from '../controllers/UsersController';
 
 const ROUTES = {
   '/status': {
@@ -10,6 +11,11 @@ const ROUTES = {
   '/stats': {
     get: {
       controller: getStats,
+    },
+  },
+  '/users': {
+    post: {
+      controller: postNew,
     },
   },
 };
