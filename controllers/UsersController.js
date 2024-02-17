@@ -1,27 +1,30 @@
-import crypto from 'crypto';
+import sha1 from 'sha1';
 import dbClient from '../utils/db';
 
-export async function postNew(req, res) {
-  const { email, password } = req.body;
-  if (!email) return res.status(400).send({ error: 'Missing email' });
-  if (!password) return res.status(400).send({ error: 'Missing password' });
-  if (await dbClient.db.collection('users').findOne({ email })) {
-    return res.status(400).send({ error: 'Already exist' });
-  }
-  const hash = crypto.createHash('sha1').update('password').digest('hex');
-  const result = await dbClient.db
-    .collection('users')
-    .insertOne({ email, password: hash });
-  const user = result.ops[0];
-  res.status(200).send({ id: user._id, email: user.email });
-  return result;
-}
+const UsersController = {
+  async postNew(req, res) {
+    const email = req.body ? req.body.email : null;
+    const password = req.body ? req.body.password : null;
+    if (!email) {
+      return res.status(400).json({ error: 'Missing email' });
+    }
+    if (!password) {
+      return res.status(400).json({ error: 'Missing password' });
+    }
+    const users = await dbClient.users();
+    if (await users.findOne({ email })) {
+      return res.status(400).json({ error: 'Already exist' });
+    }
+    const hashed = sha1(password);
 
-export function getMe(req, res) {
-  const { userId } = req.params;
-  if (!userId) return res.status(400).send('Missing userId');
-  const user = dbClient.db.collection('users').findOne({ _id: userId });
-  if (!user) return res.status(404).send('User not found');
-  res.status(200).send({ id: user._id, email: user.email });
-  return user;
-}
+    const result = await users.insertOne({ email, password: hashed });
+    return res.status(201).json({ email, id: result.insertedId.toString() });
+  },
+
+  async getMe(req, res) {
+    const { user } = req;
+    return res.status(200).json({ email: user.email, id: user._id.toString() });
+  },
+
+};
+export default UsersController;

@@ -1,58 +1,35 @@
+#!/usr/bin/node
 import { createClient } from 'redis';
+import { promisify } from 'util';
 
-export class RedisClient {
+class RedisClient {
   constructor() {
-    this.client = createClient();
-    this.client.on('error', (err) => console.error(err));
-  }
-
-  /**
-   * checks if redis client is alive
-   * @returns {boolean}
-   */
-  isAlive() {
-    return this.client.connected;
-  }
-
-  /**
-   * Get the value for a key
-   * @param {string} key
-   */
-  get(key) {
-    return new Promise((resolve, reject) => {
-      this.client.get(key, (err, reply) => {
-        if (err) {
-          // console.error(err);
-          reject(err);
-        }
-        // console.log(`reply: ${reply}`);
-        resolve(reply || null);
-      });
+    this.cli = createClient();
+    this.cli.on('error', (err) => {
+      console.log(`Redis Error: ${err}`);
     });
   }
 
-  /**
-   * Set the value for a key
-   * @param {string} key
-   * @param {string} value
-   * @param {number} duration
-   *
-   * @returns {Promise<boolean>}
-   */
-  async set(key, value, duration) {
-    return this.client.set(key, value, 'EX', duration);
+  isAlive() {
+    return this.cli.connected;
   }
 
-  /**
-   * Delete a key
-   * @param {string} key
-   *
-   * @returns {boolean}
-   */
+  async get(key) {
+    const gt = promisify(this.cli.get).bind(this.cli);
+    return gt(key);
+  }
+
+  async set(key, value, duration) {
+    const st = promisify(this.cli.set).bind(this.cli);
+    return st(key, value, 'EX', duration);
+  }
+
   async del(key) {
-    return this.client.del(key);
+    const dlt = promisify(this.cli.del).bind(this.cli);
+    return dlt(key);
   }
 }
 
 const redisClient = new RedisClient();
+
 export default redisClient;

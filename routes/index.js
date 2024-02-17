@@ -1,36 +1,20 @@
-import { Router } from 'express';
-import { getStatus, getStats } from '../controllers/AppController';
-import { postNew } from '../controllers/UsersController';
+import { middleFromAuth, middleFromToken } from '../utils/auth';
+import AppController from '../controllers/AppController';
+import AuthController from '../controllers/AuthController';
+import FilesController from '../controllers/FilesController';
+import UsersController from '../controllers/UsersController';
 
-const ROUTES = {
-  '/status': {
-    get: {
-      controller: getStatus,
-    },
-  },
-  '/stats': {
-    get: {
-      controller: getStats,
-    },
-  },
-  '/users': {
-    post: {
-      controller: postNew,
-    },
-  },
-};
-
-export default function routes() {
-  const router = Router();
-
-  for (const route of Reflect.ownKeys(ROUTES)) {
-    const routeMethods = Reflect.ownKeys(ROUTES[route]);
-    const url = route;
-    for (const method of routeMethods) {
-      const { controller } = ROUTES[url][method];
-      router[method](url, controller);
-    }
-  }
-
-  return router;
+export default function Routes(app) {
+  app.get('/status', AppController.getStatus);
+  app.get('/stats', AppController.getStats);
+  app.post('/users/', UsersController.postNew);
+  app.get('/users/me', middleFromToken, UsersController.getMe);
+  app.get('/disconnect', middleFromToken, AuthController.getDisconnect);
+  app.get('/connect', middleFromAuth, AuthController.getConnect);
+  app.post('/files', middleFromToken, FilesController.postUpload);
+  app.get('/files/:id', middleFromToken, FilesController.getShow);
+  app.put('/files/:id/publish', middleFromToken, FilesController.putPublish);
+  app.put('/files/:id/unpublish', middleFromToken, FilesController.putUnpublish);
+  app.get('/files', middleFromToken, FilesController.getIndex);
+  app.get('/files/:id/data', FilesController.getFile);
 }

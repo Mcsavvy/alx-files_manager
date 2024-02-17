@@ -1,21 +1,16 @@
-// App Controllers For Express App
-import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
 
-export function getStatus(req, res) {
-  const status = {
-    redis: redisClient.isAlive(),
-    db: dbClient.isAlive(),
-  };
-  res.status(200).send(status);
-}
-
-export function getStats(req, res) {
-  dbClient.nbUsers().then((numUsers) => {
-    // console.log(`num users: ${numUsers}`);
-    dbClient.nbFiles().then((numFiles) => {
-      // console.log(`num files: ${numFiles}`);
-      res.status(200).send({ users: numUsers, files: numFiles });
-    });
-  });
-}
+const AppController = {
+  async getStatus(req, res) {
+    const rStat = await redisClient.isAlive();
+    const dStat = await dbClient.isAlive();
+    res.json({ redis: rStat, db: dStat });
+  },
+  async getStats(req, res) {
+    const uCount = await dbClient.nbUsers();
+    const fCount = await dbClient.nbFiles();
+    res.json({ users: uCount, files: fCount });
+  },
+};
+export default AppController;
